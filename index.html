@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>$TWERK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="images/twerk_logo.ico">
+  </head>
+<audio id="bg-music" src="audio/audio.mp3" preload="auto" loop></audio>
+  <body>
+    <!-- ===== Video Background ===== -->
+    <div class="bg-video-wrap" aria-hidden="true">
+      <video id="bg-video" class="bg-video" autoplay muted loop playsinline preload="auto" poster="images/bg-fallback.jpg">
+        <source src="images/bgbg.mp4" type="video/mp4" />
+      </video>
+      <div class="bg-overlay"></div>
+    </div>
+
+   <!-- Бегущая строка -->
+<div class="marquee" aria-hidden="true">
+  <span>$TWERK $TWERK $TWERK • wiggle to the moon • shake-to-earn • peach power • $TWERK $TWERK $TWERK •</span>
+</div>
+
+<!-- ЕДИНЫЙ ТОПБАР (фикс. под маркизой) -->
+<header class="topbar">
+  <div class="topbar__left">
+    <img src="images/logo.png" alt="$TWERK" class="logo-img">
+  </div>
+
+  <div class="topbar__center">
+    <div class="ca-copy">
+      <input id="ca-input" type="text" value="coming soon" readonly />
+      <button id="copy-ca" class="cta-btn copy">Copy CA</button>
+    </div>
+    <button class="wild-btn" data-modal-open="modal-buy">How to Buy</button>
+  </div>
+
+  <ul class="topbar__right cta-inline">
+    <li><a class="link-ico" href="https://t.me/peterpawkermeow" target="_blank" rel="noopener" aria-label="Telegram"><img src="images/Telegram.svg" alt=""></a></li>
+    <li><a class="link-ico" href="https://x.com/pawker_cat" target="_blank" rel="noopener" aria-label="X"><img src="images/X.svg" alt=""></a></li>
+    <li><a class="link-ico" href="https://dexscreener.com" target="_blank" rel="noopener" aria-label="DexScreener"><img src="images/dex.svg" alt=""></a></li>
+  </ul>
+</header>
+
+
+    <!-- Emoji confetti -->
+    <div id="emoji-layer" aria-hidden="true"></div>
+
+    <!-- Content (пусто по ТЗ) -->
+    <main class="main"></main>
+
+    <!-- Intro windows layer (летающие видео) -->
+    <div id="intro-layer"></div>
+
+    <!-- Film grain -->
+    <div class="noise" aria-hidden="true"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      made with 🫶 for <span class="accent">$TWERK</span> • not financial advice • dance responsibly
+    </footer>
+<!-- ===== Entry Gate (tap image to enter) ===== -->
+<div class="gate" id="entry-gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" aria-hidden="true">
+  <div class="gate__backdrop" aria-hidden="true"></div>
+
+  <div class="gate__panel" tabindex="-1">
+    <h2 class="gate__title" id="gate-title">$TWERK</h2>
+    <p class="gate__hint">Tap the peach to enter</p>
+
+    <!-- картинка-кнопка -->
+    <button id="gate-cta" class="gate__imgbtn" aria-label="Enter">
+      <!-- замените на любую свою картинку -->
+      <img src="images/logo.png" alt="">
+      <span class="gate__pulse" aria-hidden="true"></span>
+    </button>
+
+    <!-- мини-индикация загрузки -->
+    <div class="gate__loader" aria-hidden="true"><i></i><i></i><i></i></div>
+
+    <!-- запасная кнопка (a11y) -->
+    <button class="gate__skip" id="gate-skip">Enter</button>
+  </div>
+</div>
+
+    <!-- Modals -->
+    <div class="modal-backdrop" id="modal-backdrop" aria-hidden="true"></div>
+    <div class="modal modal--howto" id="modal-buy" role="dialog" aria-modal="true" aria-labelledby="modal-buy-title" aria-hidden="true">
+      <div class="modal__panel" tabindex="-1">
+        <header class="modal__header"><h3 class="modal__title glow" id="modal-buy-title">How to Buy</h3></header>
+        <div class="modal__body">
+          <div class="howto">
+            <ol class="howto__list">
+              <li class="howto__item">
+                <h4 class="howto__step">1. Create a Phantom wallet.</h4>
+                <p>Go to <a href="https://phantom.app" target="_blank" rel="noopener">phantom.app</a> and follow the quick setup steps to create a new account using the app or browser extension.</p>
+                <div class="pills"><a class="pill" href="https://phantom.app" target="_blank" rel="noopener">Get Phantom</a></div>
+              </li>
+              <li class="howto__item">
+                <h4 class="howto__step">2. Add some $SOL.</h4>
+                <p>In Phantom, tap the <strong>BUY</strong> button to purchase Solana, or transfer <strong>$SOL</strong> from your exchange directly to your Phantom wallet.</p>
+              </li>
+              <li class="howto__item">
+                <h4 class="howto__step">3. Find the token on a DEX.</h4>
+                <p>Copy the <strong>CA</strong> token from this site. Open <a href="https://jup.ag" target="_blank" rel="noopener">Jupiter</a> and paste the CA to find $TWERK.</p>
+                <div class="pills"><a class="pill" href="https://jup.ag" target="_blank" rel="noopener">Open Jupiter</a></div>
+              </li>
+              <li class="howto__item">
+                <h4 class="howto__step">4. Swap $SOL for $TWERK.</h4>
+                <p>Click <strong>SWAP</strong> on the site and confirm the transaction in your Phantom wallet.</p>
+              </li>
+            </ol>
+          </div>
+        </div>
+        <footer class="modal__footer" style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="btn ghost" data-modal-close>Close</button>
+          <a class="btn" href="https://phantom.app" target="_blank" rel="noopener">Get Phantom</a>
+          <a class="btn primary" href="https://jup.ag" target="_blank" rel="noopener">Open Jupiter</a>
+        </footer>
+      </div>
+    </div>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>

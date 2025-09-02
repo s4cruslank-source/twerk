@@ -1,0 +1,6 @@
+/* Мини-RESET (назван "recet.css" как на скрине) */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html:focus-within { scroll-behavior: smooth; }
+img, video { max-width: 100%; display: block; }
+button, input { font: inherit; }
+a { color: inherit; }

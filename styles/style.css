@@ -1,0 +1,836 @@
+/* ================= Base & Variables ================= */
+:root{
+  --shake: 0;
+  --border: rgba(255,255,255,0.10);
+  --border-soft: rgba(255,255,255,0.15);
+  --glass: rgba(255,255,255,0.06);
+  --accent: #f0abfc;
+  --accent-strong: #f472d0;
+  --text: #fff;
+  --marquee-h: 28px;        /* высота бегущей строки */
+}
+
+*{ box-sizing: border-box; }
+html, body{ height:100%; }
+
+body{
+  margin:0;
+  color:var(--text);
+  background:transparent;           /* видно видеофон */
+  padding-top: calc(var(--marquee-h) + 86px); /* не прятать контент под фикс. верхом */
+  filter: saturate(calc(1 + var(--shake) * 0.08));
+}
+
+/* лёгкий «глоу» поверх видеофона */
+body::before{
+  content:"";
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background:
+    radial-gradient(circle at 30% 20%, #ff8fab22, transparent 40%),
+    radial-gradient(circle at 70% 80%, #9bf6ff22, transparent 40%);
+}
+
+/* ================= Video Background ================= */
+.bg-video-wrap{ position:fixed; inset:0; z-index:0; overflow:hidden; }
+.bg-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:saturate(1.05); }
+.bg-overlay{ position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,.55)); pointer-events:none; }
+
+/* ================= Marquee (top line) ================= */
+.marquee{
+  position:fixed; top:0; left:0; right:0; height:var(--marquee-h);
+  z-index:80; overflow:hidden; white-space:nowrap; pointer-events:none;
+  display:flex; align-items:center; padding-inline:10px;
+  color:#f0abfc; text-transform:uppercase; letter-spacing:.15em;
+  backdrop-filter: blur(4px);
+}
+.marquee span{ display:inline-block; padding-left:100%; font-weight:800; animation:scroll 18s linear infinite; }
+@keyframes scroll{ to{ transform:translateX(-100%); } }
+
+/* ================= Unified Fixed Topbar ================= */
+.topbar{
+  position:fixed;
+  top: var(--marquee-h);
+  left:0; right:0;
+  z-index:90;  /* выше интро/эмодзи */
+  display:flex;
+  justify-content: space-between;
+  grid-template-columns: auto 1fr auto; /* слева логотип, центр, справа иконки */
+  align-items:center;
+  gap:16px;
+  padding:10px 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,.15));
+  backdrop-filter: blur(8px);
+}
+
+.topbar__left{ display:flex; align-items:center; }
+.logo-img{ height:56px; width:auto; display:block; }
+
+/* Центр: CA + копия + кнопка */
+.topbar__center{
+  width: 20%;
+  display:grid;
+  grid-template-columns: 1fr auto;   /* инпут + кнопка Copy CA */
+  gap:10px;
+  align-items:center;
+}
+.ca-copy{ display:contents; }        /* чтобы input и Copy CA заняли одну строку */
+.ca-copy input{
+  min-height:46px; padding:10px 12px; border-radius:12px;
+  border:1px solid rgba(255,255,255,.2);
+  background: rgba(0,0,0,.45); color:#fff; font-size:14px;
+}
+.cta-btn{
+  display:flex; align-items:center; justify-content:center;
+  min-height:46px; padding:12px 16px; border-radius:12px;
+  font-weight:800; letter-spacing:.05em; color:#111; background:#fff;
+  cursor:pointer; border:0;
+}
+.cta-btn.copy{ color:#111; }
+.wild-btn{
+  grid-column: 1 / -1;               /* на десктопе внизу центра, на мобиле под инпутом */
+  min-height:50px; border-radius:14px; font-weight:900;
+  text-transform:uppercase; letter-spacing:.08em;
+  background:#e879f9; color:#111; border:1px solid rgba(255,255,255,0.2);
+  box-shadow:0 10px 30px rgba(255,0,200,0.35); cursor:pointer;
+}
+.wild-btn:hover{ background:#f0abfc; }
+
+/* Справа: иконки */
+.topbar__right.cta-inline{
+  display:flex; gap:12px; align-items:center; margin:0; padding:0; list-style:none;
+}
+.link-ico{
+  width:46px; height:46px; border-radius:12px;
+  display:grid; place-items:center; background:#fff;
+  transition:transform .12s ease, box-shadow .2s ease;
+}
+.link-ico img{ width:26px; height:auto; display:block; }
+.link-ico:hover{ transform:translateY(-2px); box-shadow:0 6px 22px rgba(255,255,255,0.08), 0 0 24px #f0abfc44; }
+
+/* ================= Main / Footer ================= */
+.main{ position:relative; z-index:25; padding:16px; display:grid; place-items:center; }
+.footer{ position:relative; z-index:25; text-align:center; color:rgba(255,255,255,0.65); font-size:12px; padding:24px; }
+.accent{ color:var(--accent); }
+
+/* ================= Flying Intros (mini videos) ================= */
+#intro-layer{ position:relative; z-index:25; }
+.intro{
+  position:fixed; width:10% !important;  height: 20% !important; z-index:50;
+  border-radius:20px; overflow:hidden;
+  border:4px solid var(--accent-strong);
+  box-shadow:0 0 60px rgba(255,0,200,0.6);
+  pointer-events:none;
+}
+.intro-video{ width:100%; height:100%; object-fit:cover; display:block; }
+
+/* ================= Emoji Layer ================= */
+#emoji-layer{ position:relative; z-index:20; }
+.floater{ position:absolute; will-change:transform; user-select:none; opacity:.6; }
+.floater span{ font-size:clamp(24px,4vw,48px); display:inline-block; }
+
+/* ================= Film Grain ================= */
+.noise{
+  position:fixed; inset:0; z-index:10; pointer-events:none;
+  mix-blend-mode:overlay; opacity:.08;
+  background-image: repeating-conic-gradient(#fff1 0% 0.5%, #0000 0.5% 1%);
+}
+
+/* ================= Modals ================= */
+.modal-backdrop{
+  position:fixed; inset:0; z-index:80; display:none;
+  background:rgba(0,0,0,0.45); backdrop-filter:blur(3px);
+}
+.modal-backdrop[data-open="true"]{ display:block; }
+
+.modal{
+  position:fixed; inset:0; z-index:90;
+  display:grid; place-items:center; padding:16px; pointer-events:none;
+}
+.modal[data-open="true"]{ pointer-events:auto; }
+
+.modal__panel{
+  width:min(720px,100%);
+  border:1px solid var(--border);
+  background:var(--glass);
+  backdrop-filter:blur(8px);
+  border-radius:16px;
+  box-shadow:0 30px 80px rgba(0,0,0,0.45);
+  color:#fff;
+  transform:translateY(8px) scale(.98);
+  opacity:0;
+  transition:transform .18s ease, opacity .18s ease;
+}
+.modal[data-open="true"] .modal__panel{ transform:translateY(0) scale(1); opacity:1; }
+.modal__header, .modal__footer{ padding:16px 18px; border-bottom:1px solid var(--border); }
+.modal__footer{ border-top:1px solid var(--border); border-bottom:0; }
+.modal__title{ margin:0; font-weight:900; font-size:clamp(18px,2.4vw,22px); }
+.modal__body{ padding:16px 18px; max-height:min(60vh,520px); overflow:auto; }
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:8px; padding:10px 14px; border-radius:12px;
+  font-weight:800; letter-spacing:.04em; cursor:pointer;
+  border:1px solid rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.08); color:#fff; text-decoration:none;
+}
+.btn.primary{ background:#e879f9; color:#111; }
+
+/* ================= Responsive ================= */
+@media (max-width: 640px){
+  .topbar{ grid-template-columns: 1fr; row-gap:10px; text-align:center; }
+  .topbar__left{ order:1; justify-content:center; }
+  .topbar__center{ order:2; grid-template-columns: 1fr; }
+  .topbar__right{ order:3; justify-content:center; }
+  .logo-img{ height:48px; }
+}
+
+@media (max-width:420px){
+  .link-ico{ width:44px; height:44px; }
+  .link-ico img{ width:24px; }
+}
+
+
+
+/* ===== TOPBAR — нормальные размеры ===== */
+.topbar{
+  gap: 20px;
+  padding: 16px 24px;
+}
+
+/* ЛОГО */
+.logo-img{
+  height: 200px;          /* было 56 */
+  width: auto;
+}
+
+/* ЦЕНТР: CA + Copy CA + How to Buy */
+.topbar__center{
+  grid-template-columns: 1fr 130px; /* инпут + Copy CA */
+  row-gap: 10px;
+}
+
+.ca-copy input{
+  min-height: 50px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  background: rgba(0,0,0,.48);
+  border: 1px solid rgba(255,255,255,.25);
+}
+
+.cta-btn.copy{
+  min-height: 50px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+/* How to Buy — одна строка, комфортная высота */
+.wild-btn{
+  grid-column: 1 / -1;     /* шириной на центр-блок */
+  min-height: 52px;
+  font-size: 15px;
+  border-radius: 14px;
+}
+
+/* ПРАВЫЕ ИКОНКИ */
+.topbar__right.cta-inline{ gap: 10px; }
+.topbar__right .link-ico{
+  width: 44px; height: 44px; border-radius: 12px;
+}
+.topbar__right .link-ico img{ width: 22px; height: auto; }
+
+/* ===== РЕСПОНСИВ ===== */
+@media (max-width: 1024px){
+  .topbar{
+    grid-template-columns: auto minmax(460px, 1fr) auto;
+    gap: 16px;
+  }
+  .logo-img{ height: 56px; }
+  .topbar__center{ grid-template-columns: 1fr 120px; }
+  .cta-btn.copy{ min-height: 48px; }
+  .ca-copy input{ min-height: 48px; }
+  .wild-btn{ min-height: 50px; }
+}
+
+@media (max-width: 720px){
+  .topbar{ grid-template-columns: 1fr; row-gap: 12px; text-align:center; }
+  .logo-img{ height: 48px; }
+  .topbar__center{ grid-template-columns: 1fr; }
+  .cta-btn.copy{ width: 100%; }
+  .topbar__right{ justify-content:center; }
+}
+
+@media (max-width: 420px){
+  .logo-img{ height: 44px; }
+  .topbar__right .link-ico{ width: 40px; height: 40px; }
+  .topbar__right .link-ico img{ width: 20px; }
+  .ca-copy input{ font-size: 14px; }
+  .wild-btn{ min-height: 48px; font-size: 14px; }
+}
+/* ===== CENTERED TOPBAR LAYOUT ===== */
+/* 3 колонки: [левый край] [ЦЕНТР] [правый край] */
+.topbar{
+  display:grid;
+  grid-template-columns: 1fr auto 1fr; /* центр — авто-ширина, всегда по центру */
+  align-items:center;
+  gap:16px;
+}
+
+/* Лого слева, иконки справа */
+.topbar__left{ justify-self:start; }
+.topbar__right{ justify-self:end; }
+
+/* Центр строго по центру экрана, с разумной шириной */
+.topbar__center{
+  justify-self:center;                 /* геометрический центр */
+  width: min(760px, 92vw);             /* не шире, чем нужно */
+  display:grid;
+  grid-template-columns: minmax(0,1fr) 130px; /* инпут + Copy CA */
+  gap:10px;
+  align-items:center;
+}
+
+/* Инпут корректно сжимается */
+.ca-copy{ display: contents; }
+.ca-copy input{
+  min-width:0;
+  width:100%;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* How to Buy — на всю ширину центра, остаётся в середине экрана */
+.wild-btn{
+  grid-column: 1 / -1;
+  width:100%;
+}
+
+/* Лого не должен давить центр */
+.logo-img{
+  height: clamp(190px, 6vw, 180px) !important;
+  width:auto;
+}
+
+/* ——— Адаптив ——— */
+@media (max-width: 720px){
+  .topbar{
+    grid-template-columns: 1fr;        /* в столбик на мобиле */
+    row-gap:12px; text-align:center;
+  }
+  .topbar__left, .topbar__right{ justify-self:center; }
+  .topbar__center{ width: min(560px, 92vw); grid-template-columns: 1fr; }
+  .cta-btn.copy{ width:100%; min-height:48px; }
+  .wild-btn{ width:100%; min-height:50px; }
+}
+/* Управляем показом интро классом на body */
+.no-intros .intro{ display:none !important; }
+/* ===== COMPACT MOBILE TOPBAR (<= 480px) ===== */
+@media (max-width: 480px){
+
+  /* меньше верхний отступ и бегущая строка */
+  :root{ --marquee-h: 22px; }
+  body{ padding-top: calc(var(--marquee-h) + 56px); }
+
+  /* компактная шапка */
+  .topbar{
+    grid-template-columns: 1fr;   /* всё в колонку */
+    gap: 10px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+
+  /* логотип — маленький */
+  .logo-img{
+    height: 40px !important;
+  }
+
+  /* центр — узкий, элементы компактные */
+  .topbar__center{
+    width: min(360px, 92vw);
+    grid-template-columns: 1fr;   /* инпут -> Copy -> How to Buy столбиком */
+    row-gap: 8px;
+    justify-self: center;
+  }
+  .ca-copy{ display: contents; }
+
+  .ca-copy input{
+    min-height: 40px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .cta-btn.copy{
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 13px;
+    border-radius: 10px;
+    width: 100%;
+  }
+
+  .wild-btn{
+    min-height: 44px;
+    font-size: 14px;
+    letter-spacing: .06em;
+    border-radius: 12px;
+    width: 100%;
+  }
+
+  /* правые иконки — меньше и ближе друг к другу */
+  .topbar__right{
+    justify-content: center;
+    gap: 8px;
+  }
+  .topbar__right .link-ico{
+    width: 36px; height: 36px; border-radius: 10px;
+  }
+  .topbar__right .link-ico img{ width: 18px; }
+
+  /* доп. косметика */
+  .marquee{ font-size: 10px; }
+}
+
+/* Очень узкие устройства (<= 360px): ещё компактнее иконки/отступы */
+@media (max-width: 360px){
+  body{ padding-top: calc(var(--marquee-h) + 52px); }
+  .logo-img{ height: 36px !important; }
+  .topbar{ padding: 6px 10px; }
+  .topbar__right .link-ico{ width: 32px; height: 32px; }
+  .topbar__right .link-ico img{ width: 16px; }
+}
+/* ===== universal safety: дети грида могут сжиматься ===== */
+.topbar > *{ min-width: 0; }
+
+/* ===== десктоп по умолчанию: 3 колонки ===== */
+.topbar{
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ===== планшеты: центр на вторую строку (фикс ломания) ===== */
+/* Диапазон под типичные iPad/Android-планшеты в альбомной/портретной */
+@media (max-width: 900px) and (min-width: 481px){
+  .topbar{
+    /* 2 ряда: сверху — логотип и иконки, ниже — центр на всю ширину */
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "left  .     right"
+      "center center center";
+    row-gap: 8px;
+    padding: 10px 12px;
+  }
+  .topbar__left{ grid-area: left; }
+  .topbar__center{
+    grid-area: center;
+    justify-self: center;
+    width: min(680px, 94vw);
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto; /* инпут тянется, Copy — по контенту */
+    gap: 8px;
+  }
+  .topbar__right{ grid-area: right; justify-self: end; gap: 8px; }
+
+  /* компактные размеры */
+  .logo-img{ height: clamp(44px, 5.5vw, 56px) !important; }
+  .ca-copy input{
+    min-height: 44px; padding: 8px 12px; font-size: 14px; border-radius: 10px;
+  }
+  .cta-btn.copy{ min-height: 44px; padding: 0 12px; font-size: 14px; border-radius: 10px; }
+  .wild-btn{ min-height: 46px; font-size: 14px; border-radius: 12px; }
+
+  .topbar__right .link-ico{ width: 36px; height: 36px; border-radius: 10px; }
+  .topbar__right .link-ico img{ width: 18px; }
+}
+
+/* ===== большие планшеты/узкие ноуты: чуть компактнее, но центр остаётся в одной строке ===== */
+@media (min-width: 901px) and (max-width: 1200px){
+  .logo-img{ height: clamp(48px, 5vw, 72px) !important; }
+  .topbar__center{
+    width: min(740px, 80vw);
+    grid-template-columns: minmax(0,1fr) 110px; /* Copy CA чуть уже */
+    gap: 10px;
+  }
+  .cta-btn.copy{ min-height: 46px; }
+  .ca-copy input{ min-height: 46px; }
+  .topbar__right .link-ico{ width: 40px; height: 40px; }
+}
+
+/* ===== мобильные: компактная колонка (как просил раньше) ===== */
+@media (max-width: 480px){
+  :root{ --marquee-h: 22px; }
+  body{ padding-top: calc(var(--marquee-h) + 56px); }
+
+  .topbar{
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 8px 12px;
+    text-align: center;
+    grid-template-areas: none;
+  }
+  .logo-img{ height: 40px !important; }
+  .topbar__center{
+    width: min(360px, 92vw);
+    grid-template-columns: 1fr; row-gap: 8px; justify-self: center;
+  }
+  .ca-copy input{ min-height: 40px; font-size: 13px; }
+  .cta-btn.copy{ min-height: 40px; font-size: 13px; width: 100%; }
+  .wild-btn{ min-height: 44px; font-size: 14px; width: 100%; }
+  .topbar__right{ justify-content: center; gap: 8px; }
+  .topbar__right .link-ico{ width: 36px; height: 36px; }
+  .topbar__right .link-ico img{ width: 18px; }
+}
+.logo-img{
+  height: clamp(72px, 12vw, 140px) !important; /* минимум 72px, максимум 140px */
+  width: auto;
+  flex-shrink: 0;      /* не сжимается */
+}
+
+/* планшеты */
+@media (max-width: 900px){
+  .logo-img{
+    height: clamp(64px, 18vw, 120px) !important;
+  }
+}
+
+/* телефоны */
+@media (max-width: 480px){
+  .logo-img{
+    height: clamp(56px, 20vw, 100px) !important;
+    margin-bottom: 4px;  /* чуть отступа вниз, чтобы не давило центр */
+  }
+}
+
+/* базовые страховки */
+.topbar{ display:grid; grid-template-columns: auto minmax(0,1fr) auto; align-items:center; gap:16px; }
+.topbar > *{ min-width:0; }                 /* позволяет сжиматься внутри грида */
+.topbar__center{ justify-self:center; width:min(820px, 92vw); }
+.ca-copy{ display:contents; }
+.ca-copy input{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* ===== планшеты-wide: 821–1100px — центр на отдельной строке ===== */
+@media (min-width: 821px) and (max-width: 1100px){
+  .topbar{
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "left  .     right"
+      "center center center";
+    row-gap:10px;
+    padding-inline:12px;
+  }
+  .topbar__left{ grid-area:left; }
+  .topbar__right{ grid-area:right; justify-self:end; display:flex; gap:8px; flex-wrap:wrap; }
+  .topbar__center{
+    grid-area:center;
+    justify-self:center;
+    width:min(760px, 94vw);
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 120px; /* инпут тянется, Copy — фикс */
+    gap:10px;
+  }
+  .cta-btn.copy{ min-height:44px; padding:0 12px; font-size:14px; border-radius:10px; }
+  .ca-copy input{ min-height:44px; padding:8px 12px; font-size:14px; border-radius:10px; }
+  .wild-btn{ grid-column:1/-1; min-height:46px; }
+  .topbar__right .link-ico{ width:36px; height:36px; border-radius:10px; }
+  .topbar__right .link-ico img{ width:18px; }
+}
+
+/* ===== узкие мобильные/планшеты ≤820px — компактная колонка ===== */
+@media (max-width: 820px){
+  .topbar{
+    grid-template-columns:1fr;
+    grid-template-areas:none;
+    row-gap:10px;
+    text-align:center;
+    padding:8px 12px;
+  }
+  .topbar__left, .topbar__right{ justify-self:center; }
+  .topbar__center{ width:min(360px, 92vw); grid-template-columns:1fr; row-gap:8px; }
+  .cta-btn.copy{ width:100%; min-height:40px; font-size:13px; }
+  .ca-copy input{ min-height:40px; font-size:13px; }
+  .wild-btn{ width:100%; min-height:44px; font-size:14px; }
+  .topbar__right{ gap:8px; }
+  .topbar__right .link-ico{ width:36px; height:36px; }
+  .topbar__right .link-ico img{ width:18px; }
+}
+
+/* ===== крупные десктопы ≥1101px — обычные 3 колонки, но сжимаемый центр ===== */
+@media (min-width: 1101px){
+  .topbar{ grid-template-columns: auto minmax(420px,1fr) auto; }
+  .topbar__center{ width:min(860px, 80vw); grid-template-columns:minmax(0,1fr) 130px; }
+}
+/* страховка: дети грида могут сжиматься */
+.topbar > *{ min-width:0; }
+
+/* ===== переходный режим: 721–1280px — центр на второй строке ===== */
+@media (min-width: 721px) and (max-width: 1280px){
+  .topbar{
+    display:grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "left  .     right"
+      "center center center";
+    row-gap: 10px;
+    padding-inline: 14px;
+    align-items:center;
+  }
+  .topbar__left  { grid-area:left;  justify-self:start; }
+  .topbar__right { grid-area:right; justify-self:end; display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* центр — по центру экрана, на всю строку */
+  .topbar__center{
+    grid-area:center;
+    justify-self:center;
+    width:min(860px, 94vw);
+    display:grid;
+    grid-template-columns: minmax(0,1fr) 130px; /* инпут тянется, Copy фикс */
+    gap:10px;
+  }
+  .wild-btn{ grid-column:1/-1; }
+
+  /* логотип крупный, но не мешает центру (другая строка) */
+  .logo-img{ height: clamp(72px, 10vw, 120px) !important; }
+
+  /* компактные правые иконки */
+  .topbar__right .link-ico{ width:40px; height:40px; border-radius:12px; }
+  .topbar__right .link-ico img{ width:20px; }
+}
+
+/* ===== мобильные ≤720px — колонка */
+@media (max-width: 720px){
+  .topbar{
+    display:grid; grid-template-columns:1fr;
+    row-gap: 10px; text-align:center; padding:8px 12px;
+  }
+  .topbar__left, .topbar__right{ justify-self:center; }
+  .topbar__center{ width:min(360px, 92vw); grid-template-columns:1fr; row-gap:8px; }
+  .cta-btn.copy{ width:100%; min-height:40px; font-size:13px; }
+  .ca-copy input{ min-height:40px; font-size:13px; }
+  .wild-btn{ width:100%; min-height:44px; font-size:14px; }
+  .topbar__right{ gap:8px; }
+  .topbar__right .link-ico{ width:36px; height:36px; }
+  .topbar__right .link-ico img{ width:18px; }
+}
+
+/* ===== десктопы ≥1281px — обычные 3 колонки, центр сжимается корректно */
+@media (min-width: 1281px){
+  .topbar{
+    display:grid; grid-template-columns: auto minmax(480px,1fr) auto;
+    align-items:center; gap:16px;
+  }
+  .topbar__center{ width:min(900px, 80vw); grid-template-columns:minmax(0,1fr) 130px; }
+}
+
+/* инпут не раздувает грид */
+.ca-copy{ display:contents; }
+.ca-copy input{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* --- страховки против «ломаний» --- */
+.topbar{ display:grid; grid-template-columns: auto minmax(0,1fr) auto; align-items:center; gap:16px; }
+.topbar > *{ min-width:0; }                         /* детям грида можно сжиматься */
+.ca-copy{ display:contents; }                       /* инпут и кнопка в одну строку центра */
+.ca-copy input{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.topbar__right{ margin:0; padding:0; }              /* никакого фона/ширины у списка иконок */
+.topbar__right.cta-inline{ list-style:none; display:flex; gap:10px; flex-wrap:nowrap; }
+
+/* ===== 721–1280 px — центр на своей строке ===== */
+@media (min-width: 721px) and (max-width: 1280px){
+  .topbar{
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "left  .     right"
+      "center center center";
+    row-gap:10px;
+    padding-inline:14px;
+  }
+  .topbar__left{  grid-area:left;  justify-self:start; }
+  .topbar__right{ grid-area:right; justify-self:end; display:flex; gap:10px; flex-wrap:wrap; }
+
+  .topbar__center{
+    grid-area:center;
+    justify-self:center;
+    width:min(860px, 94vw);
+    display:grid;
+    grid-template-columns: minmax(0,1fr) 130px;     /* инпут тянется, Copy — фикс */
+    gap:10px;
+    align-items:center;
+  }
+  .wild-btn{ grid-column:1/-1; }                    /* How to Buy — на всю ширину центра */
+
+  /* лого крупный, но не мешает (он в верхней строке) */
+  .logo-img{ height: clamp(72px, 10vw, 120px) !important; }
+  .topbar__right .link-ico{ width:40px; height:40px; border-radius:12px; }
+  .topbar__right .link-ico img{ width:20px; }
+}
+
+/* ===== ≤820 px — компактная колонка (Лого → Центр → Иконки) ===== */
+@media (max-width: 820px){
+  :root{ --marquee-h: 22px; }
+  body{ padding-top: calc(var(--marquee-h) + 58px); }
+
+  .topbar{
+    grid-template-columns: 1fr;
+    row-gap:10px;
+    text-align:center;
+    padding:8px 12px;
+    grid-template-areas:
+      "left"
+      "center"
+      "right";
+  }
+
+  .topbar__left{ grid-area:left; justify-self:center; }
+  .topbar__center{
+    grid-area:center;
+    justify-self:center;
+    width:min(360px, 92vw);
+    display:grid;
+    grid-template-columns: 1fr;                     /* инпут → Copy → How to Buy столбиком */
+    row-gap:8px;
+  }
+  .cta-btn.copy{ width:100%; min-height:40px; font-size:13px; border-radius:10px; }
+  .ca-copy input{ min-height:40px; font-size:13px; border-radius:10px; }
+  .wild-btn{ width:100%; min-height:44px; font-size:14px; border-radius:12px; }
+
+  /* ИКОПКИ — отдельной строкой, МАЛЕНЬКИЕ, не растягиваются */
+  .topbar__right{
+    grid-area:right;
+    justify-self:center;
+    display:flex;
+    gap:8px;
+  }
+  .topbar__right .link-ico{
+    width:34px; height:34px; border-radius:10px;
+    flex:0 0 auto;                                  /* не растягиваться! */
+  }
+  .topbar__right .link-ico img{ width:18px; height:auto; }
+}
+
+/* ===== ≥1281 px — классические 3 колонки ===== */
+@media (min-width: 1281px){
+  .topbar{ grid-template-columns: auto minmax(480px,1fr) auto; }
+  .topbar__center{ width:min(900px, 80vw); grid-template-columns:minmax(0,1fr) 130px; }
+}
+
+/* опционально: чтобы иконки никогда не улетали в «плашку» */
+.topbar__right, .topbar__right *{ background: transparent !important; }
+
+/* === убираем лишний скролл === */
+html, body {
+  overflow-x: hidden;      /* горизонтального скролла больше не будет */
+}
+
+/* страховка для фиксированных слоёв */
+.bg-video-wrap,
+.bg-video,
+.bg-overlay,
+.marquee,
+.topbar,
+#emoji-layer,
+#intro-layer,
+.noise {
+  max-width: 100vw;
+  overflow: hidden;
+}
+
+
+/* ===== ENTRY GATE ===== */
+.gate{
+  position:fixed; inset:0; z-index:120; /* выше модалок (90) и бекдропа (80) */
+  display:none; place-items:center; padding:16px;
+}
+.gate[data-open="true"]{ display:grid; }
+
+.gate__backdrop{
+  position:absolute; inset:0;
+  background:rgba(0,0,0,.55);
+  backdrop-filter: blur(5px) saturate(1.1);
+}
+
+.gate__panel{
+  position:relative; z-index:1;
+  width:min(560px, 92vw);
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.18);
+  background: linear-gradient( to bottom right, rgba(255,255,255,.08), rgba(255,255,255,.04) );
+  box-shadow:0 40px 120px rgba(0,0,0,.55);
+  padding:22px 18px 18px;
+  text-align:center; color:#fff;
+  transform:translateY(8px) scale(.98);
+  opacity:0;
+  transition:transform .2s ease, opacity .2s ease;
+}
+.gate[data-open="true"] .gate__panel{ transform:translateY(0) scale(1); opacity:1; }
+
+.gate__title{ margin:0 0 6px; font-weight:900; letter-spacing:.06em; }
+.gate__hint{ margin:0 0 16px; opacity:.8; }
+
+.gate__imgbtn{
+  position:relative; display:inline-grid; place-items:center;
+  width: clamp(120px, 28vw, 220px); height: clamp(120px, 28vw, 220px);
+  border-radius:26px; overflow:hidden; border:3px solid var(--accent-strong);
+  background:rgba(0,0,0,.35); cursor:pointer;
+  box-shadow:0 0 60px rgba(255,0,200,.45);
+}
+.gate__imgbtn img{
+  width:100%; height:100%; object-fit:contain;
+  /* тряска */
+  animation: gate-wiggle 1.05s ease-in-out infinite;
+}
+
+/* лёгкий пульс подсветки вокруг картинки */
+.gate__pulse{
+  position:absolute; inset:-8px; border-radius:30px; pointer-events:none;
+  box-shadow:0 0 0 0 rgba(240,171,252,.55);
+  animation: gate-pulse 1.6s ease-out infinite;
+}
+
+.gate__loader{
+  display:flex; gap:8px; justify-content:center; align-items:center;
+  height:26px; margin:16px 0 8px;
+  opacity:.0; transform:translateY(6px);
+  transition:opacity .18s ease, transform .18s ease;
+}
+.gate.armed .gate__loader{ opacity:1; transform:translateY(0); }
+.gate__loader i{
+  width:8px; height:8px; border-radius:50%;
+  background:#fff;
+  animation: gate-bounce 1s infinite;
+}
+.gate__loader i:nth-child(2){ animation-delay:.15s; }
+.gate__loader i:nth-child(3){ animation-delay:.3s; }
+
+.gate__skip{
+  display:inline-flex; align-items:center; justify-content:center;
+  margin-top:4px; padding:8px 12px; font-weight:800;
+  border-radius:10px; border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.08); color:#fff; cursor:pointer;
+}
+
+/* анимации */
+@keyframes gate-wiggle{
+  0%   { transform: translate3d(0,0,0) rotate(0deg); }
+  12%  { transform: translate3d(-1px,0,0) rotate(-5deg); }
+  24%  { transform: translate3d(1px,0,0) rotate(4deg); }
+  36%  { transform: translate3d(-1px,0,0) rotate(-4deg); }
+  48%  { transform: translate3d(1px,0,0) rotate(3deg); }
+  60%  { transform: translate3d(-1px,0,0) rotate(-3deg); }
+  72%  { transform: translate3d(1px,0,0) rotate(2deg); }
+  84%  { transform: translate3d(-1px,0,0) rotate(-2deg); }
+  100% { transform: translate3d(0,0,0) rotate(0deg); }
+}
+@keyframes gate-pulse{
+  0% { box-shadow:0 0 0 0 rgba(240,171,252,.55); }
+  100% { box-shadow:0 0 0 34px rgba(240,171,252,0); }
+}
+@keyframes gate-bounce{
+  0%, 80%, 100% { transform: translateY(0) scale(1); opacity:.5; }
+  40%          { transform: translateY(-6px) scale(1.05); opacity:1; }
+}
+
+/* уменьшить движение, если у пользователя reduce-motion */
+@media (prefers-reduced-motion: reduce){
+  .gate__imgbtn img,
+  .gate__pulse,
+  .gate__loader i{ animation: none !important; }
+}
