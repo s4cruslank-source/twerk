@@ -53,9 +53,7 @@ const lerp  = (a,b,t)=>a+(b-a)*t;
 // показываем интро только на «десктопном» вводе и достаточной ширине
 const shouldShowIntros = () => {
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches; // телефоны/планшеты
-  const isNarrow = window.innerWidth < 900; // запас по ширине
-  return !prefersReduced && !hasCoarsePointer && !isNarrow;
+  return !prefersReduced; // единственное ограничение — accessibility
 };
 
 // централизовано обновляем видимость
@@ -105,8 +103,11 @@ window.addEventListener("resize", () => {
 function applyResponsive(){
   const W = window.innerWidth;
   const t = clamp((W - 360) / (1440 - 360), 0, 1);
-  R.introSize   = Math.round(lerp(140, 260, t));
-  root.style.setProperty("--intro-size", "100vw"); // 20% ширины окна
+  const base = Math.min(window.innerWidth, window.innerHeight);
+R.introSize = Math.round(clamp(base * 0.18, 110, 260)); // 18% экрана, min 110px, max 260px
+
+// прокинем в CSS на всякий случай (если где-то будешь использовать)
+root.style.setProperty("--intro-size", R.introSize + "px");
   R.floaterFont = Math.round(lerp(22, 44, t));
   root.style.setProperty("--floater-font", R.floaterFont + "px");
   R.floaterCount= Math.round(lerp(10, 24, t));

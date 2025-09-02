@@ -115,13 +115,29 @@ body::before{
 /* ================= Flying Intros (mini videos) ================= */
 #intro-layer{ position:relative; z-index:25; }
 .intro{
-  position:fixed; width:10% !important;  height: 20% !important; z-index:50;
-  border-radius:20px; overflow:hidden;
-  border:4px solid var(--accent-strong);
-  box-shadow:0 0 60px rgba(255,0,200,0.6);
-  pointer-events:none;
+  position: fixed;
+  width: var(--intro-size, 180px);
+  height: var(--intro-size, 180px);
+  z-index: 50;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 4px solid var(--accent-strong);
+  box-shadow: 0 0 60px rgba(255,0,200,.6);
+  pointer-events: none;
 }
-.intro-video{ width:100%; height:100%; object-fit:cover; display:block; }
+
+/* Видео внутри — без искажений */
+.intro-video{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;      /* не тянем пропорции */
+  display: block;
+}
+
+/* на маленьких экранах — чуть тоньше рамка, меньше тень */
+@media (max-width: 640px){
+  .intro{ border-width: 3px; box-shadow: 0 0 40px rgba(255,0,200,.5); }
+}
 
 /* ================= Emoji Layer ================= */
 #emoji-layer{ position:relative; z-index:20; }
@@ -236,9 +252,9 @@ body::before{
 /* ПРАВЫЕ ИКОНКИ */
 .topbar__right.cta-inline{ gap: 10px; }
 .topbar__right .link-ico{
-  width: 44px; height: 44px; border-radius: 12px;
+  width: 55px; height: 55px; border-radius: 12px; margin-right: 30px;
 }
-.topbar__right .link-ico img{ width: 22px; height: auto; }
+.topbar__right .link-ico img{ width: 44px; height: auto; }
 
 /* ===== РЕСПОНСИВ ===== */
 @media (max-width: 1024px){
@@ -912,7 +928,7 @@ html, body {
 }
 .modal--howto .btn.primary{
   background: linear-gradient(180deg, #f0abfc, #f472d0);
-  color:#111;
+  color:#fff !important;
   box-shadow: 0 10px 30px rgba(255,0,200,.35);
 }
 .modal--howto .btn:hover{ transform: translateY(-1px); }
