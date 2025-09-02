@@ -834,3 +834,100 @@ html, body {
   .gate__pulse,
   .gate__loader i{ animation: none !important; }
 }
+/* ==== HOW TO BUY — читаемая модалка под $TWERK ==== */
+.modal-backdrop{
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(240,171,252,.25), transparent 40%),
+              radial-gradient(1200px 600px at 110% 110%, rgba(155,246,255,.20), transparent 40%),
+              rgba(0,0,0,.62) !important;         /* темнее фон */
+  backdrop-filter: blur(5px) saturate(1.05);
+}
+
+/* панель */
+.modal--howto .modal__panel{
+  background:
+    linear-gradient( to bottom right, rgba(20, 12, 22, .82), rgba(16, 8, 18, .78) ),
+    var(--glass);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 50px 140px rgba(0,0,0,.55), 0 0 0 1px rgba(240,171,252,.10) inset;
+  color: rgba(255,255,255,.95);
+}
+
+/* заголовок и нижняя кромка */
+.modal--howto .modal__header{
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  background: linear-gradient(to bottom, rgba(255,255,255,.06), rgba(255,255,255,0));
+}
+.modal--howto .modal__footer{
+  border-top: 1px solid rgba(255,255,255,.12);
+  background: linear-gradient(to top, rgba(255,255,255,.06), rgba(255,255,255,0));
+}
+
+/* тайтл с лёгким свечением */
+.modal--howto .modal__title{
+  font-weight: 900;
+  letter-spacing: .03em;
+  text-shadow: 0 2px 18px rgba(240,171,252,.35);
+}
+
+/* текст */
+.modal--howto .modal__body{
+  line-height: 1.6;
+  font-size: 15.5px;
+  color: rgba(255,255,255,.92);
+}
+
+/* список шагов */
+.modal--howto .howto__list{
+  margin: 0; padding-left: 1.25rem;
+}
+.modal--howto .howto__item{ margin: 0 0 18px; }
+.modal--howto .howto__step{
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  color: #fff;
+}
+/* подчёркиваем маркер шага акцентом */
+.modal--howto ol li::marker{ color: var(--accent); font-weight: 900; }
+
+/* ссылки — убираем синий, делаем фирменные */
+.modal--howto a{
+  color: var(--accent) !important;
+  text-decoration: none;
+  font-weight: 800;
+}
+.modal--howto a:hover{
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.modal--howto a:visited{ color: var(--accent) !important; }
+
+/* кнопки в футере — ярче и читаемее */
+.modal--howto .btn{
+  border-color: rgba(255,255,255,.22);
+  background: rgba(255,255,255,.10);
+  color:#fff;
+  font-weight: 900;
+}
+.modal--howto .btn.primary{
+  background: linear-gradient(180deg, #f0abfc, #f472d0);
+  color:#111;
+  box-shadow: 0 10px 30px rgba(255,0,200,.35);
+}
+.modal--howto .btn:hover{ transform: translateY(-1px); }
+
+/* скролл внутри модалки — тонкий и неядовитый */
+.modal--howto .modal__body{ scrollbar-width: thin; }
+.modal--howto .modal__body::-webkit-scrollbar{ width: 10px; }
+.modal--howto .modal__body::-webkit-scrollbar-thumb{
+  background: linear-gradient(#ffffff33, #ffffff22);
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+
+/* адаптив — на мобильных ещё крупнее кегль */
+@media (max-width: 480px){
+  .modal--howto .modal__panel{ width:min(96vw, 560px); }
+  .modal--howto .modal__body{ font-size: 15.8px; }
+}
