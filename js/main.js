@@ -14,26 +14,26 @@ let autoplayReady = false;
 let physicsStarted = false;
 let introsEnabled  = false;
 
-
-const intros = [];   // {el, size, pos, vel, visible}
-const EMOJIS = ["🍑","💥","🫨","🎛️","💸","🚀","🌀","✨","⚡","🔥"];
+const intros  = []; // {el, size, pos, vel, visible, dragging}
 const floaters = [];
+const EMOJIS = ["🍑","💥","🫨","🎛️","💸","🚀","🌀","✨","⚡","🔥"];
 
 // ===== DOM =====
-const root      = document.documentElement;
-const headerEl  = document.querySelector(".header");
-const meterFill = document.getElementById("meter-fill");
-const levelText = document.getElementById("level-text");
-const rateEl    = document.getElementById("rate");
-const btnDec    = document.getElementById("btn-dec");
-const btnInc    = document.getElementById("btn-inc");
-const btnRnd    = document.getElementById("btn-rnd");
-const mainVideo = document.getElementById("main-video");
-const emojiLayer= document.getElementById("emoji-layer");
-const introLayer= document.getElementById("intro-layer");
-const copyBtn   = document.getElementById("copy-ca");
-const caInput   = document.getElementById("ca-input");
-const bgVideo   = document.getElementById("bg-video");
+const root       = document.documentElement;
+const headerEl   = document.querySelector(".header");
+const topbarEl   = document.querySelector(".topbar");
+const meterFill  = document.getElementById("meter-fill");
+const levelText  = document.getElementById("level-text");
+const rateEl     = document.getElementById("rate");
+const btnDec     = document.getElementById("btn-dec");
+const btnInc     = document.getElementById("btn-inc");
+const btnRnd     = document.getElementById("btn-rnd");
+const mainVideo  = document.getElementById("main-video");
+const emojiLayer = document.getElementById("emoji-layer");
+const introLayer = document.getElementById("intro-layer");
+const copyBtn    = document.getElementById("copy-ca");
+const caInput    = document.getElementById("ca-input");
+const bgVideo    = document.getElementById("bg-video");
 
 // ===== Speed Scale Config =====
 const MIN_POS  = 0;
@@ -44,19 +44,33 @@ const MAX_RATE = 4.00;
 const DEC_STEP = 0.25;
 const INC_STEP = 0.50;
 
-// ===== Responsive helpers =====
+// ===== Helpers / Responsive =====
 const R = { introSize: 240, floaterFont: 40, floaterCount: 20, floaterScale: 1 };
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp  = (a,b,t)=>a+(b-a)*t;
 
-// показываем интро всегда (можешь сменить логику при желании)
-// показываем интро только на «десктопном» вводе и достаточной ширине
-const shouldShowIntros = () => {
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  return !prefersReduced; // единственное ограничение — accessibility
+// читаем CSS-значение в px
+const px = (v) => {
+  const m = String(v || "").trim().match(/^([\d.]+)px$/);
+  return m ? parseFloat(m[1]) : parseFloat(v) || 0;
 };
 
-// централизовано обновляем видимость
+// верхняя «стенка»: высота маркизы + высота топбара + небольшой паддинг
+function getTopGuard(){
+  const rs = getComputedStyle(document.documentElement);
+  const marqueeH = px(rs.getPropertyValue('--marquee-h')) || 0;
+  const barH = topbarEl ? topbarEl.getBoundingClientRect().height : 0;
+  const pad = 8;
+  return Math.max(0, Math.round(marqueeH + barH + pad));
+}
+
+// показываем интро всегда, кроме users with reduced motion
+const shouldShowIntros = () => {
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return !prefersReduced;
+};
+
+// централизованное включение/выключение интро
 function updateIntrosVisibility(){
   if (shouldShowIntros()){
     if (!introsEnabled) enableIntros();
@@ -67,64 +81,38 @@ function updateIntrosVisibility(){
   }
 }
 
-// в init() — вместо прямого enableIntros():
-function init(){
-  if (mainVideo) mainVideo.src = MAIN_TWERK_VIDEO_SRC;
-
-  applyResponsive();
-
-  // было: if (shouldShowIntros()) enableIntros();
-  updateIntrosVisibility();
-
-  createFloaters();
-
-  // остальное без изменений...
-  if (bgVideo) {
-    bgVideo.play().catch(() => {
-      const kick = () => { bgVideo.play().catch(()=>{}); window.removeEventListener("pointerdown", kick, {once:true}); };
-      window.addEventListener("pointerdown", kick, {once:true});
-    });
-  }
-  requestAnimationFrame(floaterLoop);
-  setLevel(ZERO_POS);
-}
-
-// в ресайзе — тоже используем централизованную функцию:
-window.addEventListener("resize", () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    applyResponsive();
-    updateIntrosVisibility(); // <— ключевая строка
-  }, 120);
-});
-
-
-
 function applyResponsive(){
   const W = window.innerWidth;
   const t = clamp((W - 360) / (1440 - 360), 0, 1);
+
+  // размер интро = 18% от короткой стороны экрана, в пределах 110..260
   const base = Math.min(window.innerWidth, window.innerHeight);
-R.introSize = Math.round(clamp(base * 0.18, 110, 260)); // 18% экрана, min 110px, max 260px
+  R.introSize = Math.round(clamp(base * 0.18, 110, 260));
+  root.style.setProperty("--intro-size", R.introSize + "px");
 
-// прокинем в CSS на всякий случай (если где-то будешь использовать)
-root.style.setProperty("--intro-size", R.introSize + "px");
-  R.floaterFont = Math.round(lerp(22, 44, t));
+  R.floaterFont  = Math.round(lerp(22, 44, t));
+  R.floaterCount = Math.round(lerp(10, 24, t));
+  R.floaterScale = lerp(0.82, 1.0, t);
   root.style.setProperty("--floater-font", R.floaterFont + "px");
-  R.floaterCount= Math.round(lerp(10, 24, t));
-  R.floaterScale= lerp(0.82, 1.0, t);
 
-  // подгон размеров существующих интро
+  const tG = getTopGuard();
+
+  // подгоняем существующие интро под новый размер и верхнюю границу
   for (const box of intros){
     const old = box.size;
     if (old !== R.introSize){
       const cx = box.pos.x + old/2, cy = box.pos.y + old/2;
       box.size = R.introSize;
       box.pos.x = clamp(cx - R.introSize/2, 0, window.innerWidth  - R.introSize);
-      box.pos.y = clamp(cy - R.introSize/2, 0, window.innerHeight - R.introSize);
+      box.pos.y = clamp(cy - R.introSize/2, tG, window.innerHeight - R.introSize);
       box.el.style.width  = R.introSize + "px";
       box.el.style.height = R.introSize + "px";
       box.el.style.left   = box.pos.x + "px";
       box.el.style.top    = box.pos.y + "px";
+    } else {
+      // даже без изменения размера не даём залезть под шапку
+      box.pos.y = Math.max(box.pos.y, tG);
+      box.el.style.top = box.pos.y + "px";
     }
   }
 
@@ -142,8 +130,7 @@ window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     applyResponsive();
-    if (shouldShowIntros() && !introsEnabled) enableIntros();
-    if (!shouldShowIntros() && introsEnabled) disableIntros();
+    updateIntrosVisibility();
   }, 120);
 });
 
@@ -152,17 +139,15 @@ function init(){
   if (mainVideo) mainVideo.src = MAIN_TWERK_VIDEO_SRC;
 
   applyResponsive();
-
-  // интро и физика
-  if (shouldShowIntros()) enableIntros();
+  updateIntrosVisibility();
   createFloaters();
 
-  // кнопки, если присутствуют
+  // кнопки скорости (если есть)
   if (btnDec) btnDec.addEventListener("click", () => setLevel(Math.max(MIN_POS, level - 1)));
   if (btnInc) btnInc.addEventListener("click", () => setLevel(Math.min(MAX_POS, level + 1)));
   if (btnRnd) btnRnd.addEventListener("click", () => setLevel(Math.floor(Math.random() * (MAX_POS - MIN_POS + 1)) + MIN_POS));
 
-  // автоплей фонового видео
+  // автоплей фонового видео с жёстким kick по первому тапу
   if (bgVideo) {
     bgVideo.play().catch(() => {
       const kick = () => { bgVideo.play().catch(()=>{}); window.removeEventListener("pointerdown", kick, {once:true}); };
@@ -216,13 +201,14 @@ function setLevel(v){
 // ===== Intro windows =====
 function createIntroWindows(srcs){
   const placed = [];
+  const tG = getTopGuard();
 
   function randomPos(){
     const pad = 16;
     const S = R.introSize;
-    const topGuard = 140; // не залезать под верхние бары
+    const minY = tG + pad;
     const x = Math.random() * (window.innerWidth  - S - pad*2) + pad;
-    const y = Math.random() * (window.innerHeight - S - pad*2 - topGuard) + pad + topGuard;
+    const y = Math.random() * (window.innerHeight - S - pad*2 - minY) + minY;
     return {x, y};
   }
   function nonOverlapping(p){
@@ -250,13 +236,16 @@ function createIntroWindows(srcs){
 
     introLayer.appendChild(el);
 
-    intros.push({
+    const box = {
       el,
       size: R.introSize,
       pos: { x: pos.x, y: pos.y },
       vel: { vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2 },
-      visible: true
-    });
+      visible: true,
+      dragging: false
+    };
+    intros.push(box);
+    makeDraggable(box); // drag на мыши/таче
   });
 }
 const bounds = () => ({ w: window.innerWidth, h: window.innerHeight });
@@ -271,11 +260,12 @@ function startIntrosPhysics(){
 
   function step(){
     const b = bounds();
+    const tG = getTopGuard();
 
     // move & walls
     for (let i = 0; i < intros.length; i++){
       const box = intros[i];
-      if (!box.visible) continue;
+      if (!box.visible || box.dragging) continue;
 
       let nx = box.pos.x + box.vel.vx;
       let ny = box.pos.y + box.vel.vy;
@@ -285,7 +275,7 @@ function startIntrosPhysics(){
       const s = box.size;
 
       if (nx < 0){ nx = 0; nvx = -nvx * (bounce + 0.15); nvy += (Math.random() - 0.5) * 0.6; }
-      if (ny < 0){ ny = 0; nvy = -nvy * (bounce + 0.15); nvx += (Math.random() - 0.5) * 0.6; }
+      if (ny < tG){ ny = tG; nvy = -nvy * (bounce + 0.15); nvx += (Math.random() - 0.5) * 0.6; }
       if (nx > b.w - s){ nx = b.w - s; nvx = -nvx * (bounce + 0.15); nvy += (Math.random() - 0.5) * 0.6; }
       if (ny > b.h - s){ ny = b.h - s; nvy = -nvy * (bounce + 0.15); nvx += (Math.random() - 0.5) * 0.6; }
 
@@ -296,11 +286,11 @@ function startIntrosPhysics(){
       box.el.style.top  = ny + "px";
     }
 
-    // pair collisions
+    // pair collisions (не трогаем тащимые)
     for (let i = 0; i < intros.length; i++){
       for (let j = i + 1; j < intros.length; j++){
         const a = intros[i], b2 = intros[j];
-        if (!a.visible || !b2.visible) continue;
+        if (!a.visible || !b2.visible || a.dragging || b2.dragging) continue;
 
         const dx = a.pos.x - b2.pos.x;
         const dy = a.pos.y - b2.pos.y;
@@ -348,6 +338,7 @@ function startIntrosPhysics(){
 
 // ===== Pointer push =====
 function pushIntrosByPointer(e){
+  if (intros.some(b => b.dragging)) return; // не мешаем во время drag
   const pushRadius = 240;
   for (const box of intros){
     if (!box.visible) continue;
@@ -364,6 +355,76 @@ function pushIntrosByPointer(e){
       box.vel.vy -= (dy / inv) * force;
     }
   }
+}
+
+// ===== Drag (mouse + touch via Pointer Events) =====
+function makeDraggable(box){
+  const el = box.el;
+  let drag = { active:false, id:null, dx:0, dy:0, lastX:0, lastY:0, lastT:0, vx:0, vy:0 };
+
+  const onDown = (e) => {
+    if (drag.active) return;
+    drag.active = true;
+    drag.id = e.pointerId;
+    el.setPointerCapture?.(drag.id);
+    el.classList.add('dragging');
+
+    box.dragging = true;
+    box.vel.vx = 0; box.vel.vy = 0;
+
+    const rect = el.getBoundingClientRect();
+    drag.dx = e.clientX - rect.left;
+    drag.dy = e.clientY - rect.top;
+
+    drag.lastX = e.clientX;
+    drag.lastY = e.clientY;
+    drag.lastT = performance.now();
+
+    e.preventDefault();
+  };
+
+  const onMove = (e) => {
+    if (!drag.active || e.pointerId !== drag.id) return;
+
+    const b = bounds();
+    const s = box.size;
+    const tG = Math.min(getTopGuard(), b.h - s - 4);
+
+    let nx = Math.min(Math.max(e.clientX - drag.dx, 0), b.w - s);
+    let ny = Math.min(Math.max(e.clientY - drag.dy, tG), b.h - s);
+
+    const t = performance.now();
+    const dt = Math.max(8, t - drag.lastT);
+    drag.vx = (e.clientX - drag.lastX) / dt;
+    drag.vy = (e.clientY - drag.lastY) / dt;
+    drag.lastX = e.clientX; drag.lastY = e.clientY; drag.lastT = t;
+
+    box.pos.x = nx; box.pos.y = ny;
+    el.style.left = nx + "px";
+    el.style.top  = ny + "px";
+
+    e.preventDefault();
+  };
+
+  const onUp = (e) => {
+    if (!drag.active || e.pointerId !== drag.id) return;
+    drag.active = false;
+    el.releasePointerCapture?.(drag.id);
+    el.classList.remove('dragging');
+
+    // инерция
+    const scale = 18;
+    box.vel.vx = drag.vx * scale;
+    box.vel.vy = drag.vy * scale;
+    box.dragging = false;
+
+    e.preventDefault();
+  };
+
+  el.addEventListener('pointerdown', onDown, {passive:false});
+  window.addEventListener('pointermove', onMove, {passive:false});
+  window.addEventListener('pointerup',   onUp,   {passive:false});
+  window.addEventListener('pointercancel', onUp, {passive:false});
 }
 
 // ===== Emoji floaters =====
@@ -411,8 +472,10 @@ function floaterLoop(){
   const setOpenState = (modal, open) => {
     modal.dataset.open = open ? "true" : "false";
     modal.setAttribute('aria-hidden', open ? 'false' : 'true');
-    backdrop.dataset.open = open ? "true" : "false";
-    backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (backdrop){
+      backdrop.dataset.open = open ? "true" : "false";
+      backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
     body.classList.toggle('no-scroll', open);
   };
 
@@ -431,7 +494,37 @@ function floaterLoop(){
     return () => modal.removeEventListener('keydown', onKey);
   };
 
-/* ===== Entry Gate logic ===== */
+  let releaseTrap = null;
+  function openModalById(id, trigger=null){
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    lastTrigger = trigger; current = modal;
+    setOpenState(modal, true);
+    releaseTrap = focusTrap(modal);
+    const onBackdrop = (e) => { if (e.target === backdrop) closeModal(); };
+    backdrop?.addEventListener('click', onBackdrop, { once:true });
+    setTimeout(() => {
+      const focusTarget = qs('[data-modal-close], .btn, .wild-btn', modal) || qs('.modal__panel', modal);
+      (focusTarget || modal).focus();
+    }, 10);
+  }
+  function closeModal(){
+    if (!current) return;
+    setOpenState(current, false);
+    if (releaseTrap) releaseTrap();
+    if (lastTrigger && typeof lastTrigger.focus === 'function') lastTrigger.focus();
+    current = null;
+  }
+
+  document.addEventListener('click', (e) => {
+    const opener = e.target.closest?.('[data-modal-open]');
+    if (opener){ const id = opener.getAttribute('data-modal-open'); openModalById(id, opener); }
+    if (e.target.closest?.('[data-modal-close]')) closeModal();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && current) closeModal(); });
+})();
+
+// ===== Entry Gate logic (tap image to enter + music) =====
 (() => {
   const gate  = document.getElementById('entry-gate');
   if (!gate) return;
@@ -439,7 +532,14 @@ function floaterLoop(){
   const panel = gate.querySelector('.gate__panel');
   const cta   = document.getElementById('gate-cta');   // картинка-кнопка
   const skip  = document.getElementById('gate-skip');  // запасная кнопка
-  const music = document.getElementById('bg-music');   // <audio> из HTML
+  const music = document.getElementById('bg-music');   // <audio> в HTML (желательно с loop)
+
+  // fallback: если loop где-то не сработал
+  if (music){
+    music.addEventListener('ended', async () => {
+      try { music.currentTime = 0; await music.play(); } catch(e){}
+    });
+  }
 
   // плавный fade-in громкости
   const fadeInAudio = (audio, target = 0.6, duration = 900) => {
@@ -458,13 +558,11 @@ function floaterLoop(){
   const startMusic = async () => {
     if (!music) return;
     try {
-      // iOS любит явный seek до 0 перед первым play
       if (music.currentTime > 0 === false) music.currentTime = 0;
       await music.play();
       fadeInAudio(music, 0.6, 900);
     } catch (err) {
-      // если что-то помешало — просто молча продолжаем
-      // (в клике уже есть пользовательский жест, обычно play пройдёт)
+      // если что-то помешало — не мешаем входу
     }
   };
 
@@ -479,63 +577,27 @@ function floaterLoop(){
     gate.dataset.open = "false";
     gate.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('no-scroll');
-    sessionStorage.setItem('twerkGate', '1');
+    sessionStorage.setItem('twerkGate', '1'); // показывать один раз за сессию
   };
 
-  // клик по картинке: показываем «загрузку», запускаем музыку и закрываем гейт
   const handleEnter = async () => {
-    gate.classList.add('armed');      // показывает точки загрузки
-    await startMusic();               // запускаем музыку с fade-in
-    setTimeout(closeGate, 800);       // небольшая задержка для «лоадера»
+    gate.classList.add('armed');      // показать «лоадер»
+    await startMusic();               // старт музыки
+    setTimeout(closeGate, 800);       // лёгкая задержка
   };
 
   cta?.addEventListener('click', handleEnter);
-  skip?.addEventListener('click', handleEnter); // запасная кнопка тоже включает музыку
-
-  // Enter с клавиатуры тоже «входит»
+  skip?.addEventListener('click', handleEnter);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && gate.dataset.open === 'true') cta?.click();
   });
 
-  // показываем гейт один раз за сессию вкладки
   if (!sessionStorage.getItem('twerkGate')) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       gate.classList.add('reduced');
     }
     openGate();
   }
-})();
-
-
-
-  let releaseTrap = null;
-  function openModalById(id, trigger=null){
-    const modal = document.getElementById(id);
-    if (!modal) return;
-    lastTrigger = trigger; current = modal;
-    setOpenState(modal, true);
-    releaseTrap = focusTrap(modal);
-    const onBackdrop = (e) => { if (e.target === backdrop) closeModal(); };
-    backdrop.addEventListener('click', onBackdrop, { once:true });
-    setTimeout(() => {
-      const focusTarget = qs('[data-modal-close], .btn, .wild-btn', modal) || qs('.modal__panel', modal);
-      (focusTarget || modal).focus();
-    }, 10);
-  }
-  function closeModal(){
-    if (!current) return;
-    setOpenState(current, false);
-    if (releaseTrap) releaseTrap();
-    if (lastTrigger && typeof lastTrigger.focus === 'function') lastTrigger.focus();
-    current = null;
-  }
-
-  document.addEventListener('click', (e) => {
-    const opener = e.target.closest('[data-modal-open]');
-    if (opener){ const id = opener.getAttribute('data-modal-open'); openModalById(id, opener); }
-    if (e.target.closest('[data-modal-close]')) closeModal();
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && current) closeModal(); });
 })();
 
 // Copy CA
