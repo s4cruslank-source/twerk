@@ -4,7 +4,8 @@ const INTRO_VIDEO_SRCS = [
   "./images/twerk1.mp4",
   "./images/twerk2.mp4",
   "./images/twerk3.mp4",
-  "./images/twerk4.mp4"
+  "./images/twerk4.mp4",
+  "./images/twekr5.mp4" // FIX: было twekr5.mp4
 ];
 const MAIN_TWERK_VIDEO_SRC = "./images/llatindance.mp4";
 
@@ -34,6 +35,9 @@ const introLayer = document.getElementById("intro-layer");
 const copyBtn    = document.getElementById("copy-ca");
 const caInput    = document.getElementById("ca-input");
 const bgVideo    = document.getElementById("bg-video");
+
+// ===== Config =====
+const INTRO_DRAGGABLE = true; // drag выключен (только «подталкивания»)
 
 // ===== Speed Scale Config =====
 const MIN_POS  = 0;
@@ -165,14 +169,19 @@ function enableIntros(){
   introsEnabled = true;
   createIntroWindows(INTRO_VIDEO_SRCS);
   startIntrosPhysics();
+
+  // курсор «дует» постоянно + по клику — удар
   window.addEventListener("pointermove", pushIntrosByPointer);
+  window.addEventListener("pointerdown", pushBurst);
 }
 function disableIntros(){
   if (!introsEnabled) return;
   introsEnabled = false;
   for (const box of intros) box.el.remove();
   intros.length = 0;
+
   window.removeEventListener("pointermove", pushIntrosByPointer);
+  window.removeEventListener("pointerdown", pushBurst);
 }
 
 // ===== Level control (0..8) =====
@@ -236,16 +245,25 @@ function createIntroWindows(srcs){
 
     introLayer.appendChild(el);
 
-    const box = {
-      el,
-      size: R.introSize,
-      pos: { x: pos.x, y: pos.y },
-      vel: { vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2 },
-      visible: true,
-      dragging: false
-    };
+    // стартовая скорость и направление — чтобы «поплыли» сами
+const speed = 2.8 + Math.random() * 2.6;   // было 1.8..3.4 → стало 2.8..5.4 px/кадр
+const angle = Math.random() * Math.PI * 2;
+
+const box = {
+  el,
+  size: R.introSize,
+  pos: { x: pos.x, y: pos.y },
+  vel: { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed },
+  visible: true,
+  dragging: false,
+  wanderSeed: Math.random() * 1000,  // для «брожения»
+  maxSpeed: 6.2                      // верхняя граница скорости
+};
+
     intros.push(box);
-    makeDraggable(box); // drag на мыши/таче
+
+    // drag подключаем только если включён флаг
+    if (INTRO_DRAGGABLE) makeDraggable(box);
   });
 }
 const bounds = () => ({ w: window.innerWidth, h: window.innerHeight });
@@ -255,8 +273,9 @@ function startIntrosPhysics(){
   if (physicsStarted) return;
   physicsStarted = true;
 
-  const friction = 0.94;
-  const bounce = 0.8;
+const friction = 0.985; // было 0.93 — теперь скорость держится дольше
+const bounce   = 0.82;  // чуть мягче отскок
+
 
   function step(){
     const b = bounds();
@@ -278,6 +297,16 @@ function startIntrosPhysics(){
       if (ny < tG){ ny = tG; nvy = -nvy * (bounce + 0.15); nvx += (Math.random() - 0.5) * 0.6; }
       if (nx > b.w - s){ nx = b.w - s; nvx = -nvx * (bounce + 0.15); nvy += (Math.random() - 0.5) * 0.6; }
       if (ny > b.h - s){ ny = b.h - s; nvy = -nvy * (bounce + 0.15); nvx += (Math.random() - 0.5) * 0.6; }
+
+      // анти-«сонливость»: если почти остановились — лёгкий пинок
+  // анти-«сонливость»: если почти остановились — лёгкий пинок
+const speed2 = nvx*nvx + nvy*nvy;
+if (speed2 < 0.02){ // было 0.06
+  const ang = Math.random() * Math.PI * 2;
+  nvx += Math.cos(ang) * 0.7;
+  nvy += Math.sin(ang) * 0.7;
+}
+
 
       box.pos.x = nx; box.pos.y = ny;
       box.vel.vx = nvx; box.vel.vy = nvy;
@@ -336,10 +365,15 @@ function startIntrosPhysics(){
   requestAnimationFrame(step);
 }
 
-// ===== Pointer push =====
+// ===== Pointer push (hover + click burst) =====
 function pushIntrosByPointer(e){
-  if (intros.some(b => b.dragging)) return; // не мешаем во время drag
-  const pushRadius = 240;
+  // не мешаем, если кто-то тащит (на случай, если drag включат флагом)
+  if (INTRO_DRAGGABLE && intros.some(b => b.dragging)) return;
+
+  const W = window.innerWidth;
+  const pushRadius = Math.max(220, Math.min(420, W * 0.12)); // адаптивный радиус
+  const maxForce   = 4.2;   // сила отталкивания
+
   for (const box of intros){
     if (!box.visible) continue;
     const rect = box.el.getBoundingClientRect();
@@ -348,17 +382,47 @@ function pushIntrosByPointer(e){
     const dx = e.clientX - cx;
     const dy = e.clientY - cy;
     const dist = Math.hypot(dx, dy);
-    if (dist < pushRadius){
-      const force = (1 - dist / pushRadius) * 3.5;
-      const inv = dist || 1;
-      box.vel.vx -= (dx / inv) * force;
-      box.vel.vy -= (dy / inv) * force;
-    }
+    if (dist >= pushRadius) continue;
+
+    const inv = dist || 1;
+    const falloff = 1 - (dist / pushRadius);   // 1 у курсора, 0 на границе
+    const force = maxForce * Math.pow(falloff, 1.3); // плавный спад
+
+    box.vel.vx -= (dx / inv) * force;
+    box.vel.vy -= (dy / inv) * force;
+  }
+}
+
+// разовый сильный «тычок» по клику/тапу
+function pushBurst(e){
+const burstRadius = 360; // было 320
+const burstForce  = 22;  
+
+  for (const box of intros){
+    if (!box.visible) continue;
+    const rect = box.el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top  + rect.height / 2;
+
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist >= burstRadius) continue;
+
+    const inv = dist || 1;
+    const falloff = 1 - (dist / burstRadius);
+    const impulse = burstForce * (0.6 + 0.4 * falloff); // ближе — сильнее
+
+    box.vel.vx -= (dx / inv) * impulse;
+    box.vel.vy -= (dy / inv) * impulse;
   }
 }
 
 // ===== Drag (mouse + touch via Pointer Events) =====
+// оставлен для совместимости — включается только если INTRO_DRAGGABLE = true
 function makeDraggable(box){
+  if (!INTRO_DRAGGABLE) return;
+
   const el = box.el;
   let drag = { active:false, id:null, dx:0, dy:0, lastX:0, lastY:0, lastT:0, vx:0, vy:0 };
 
@@ -393,7 +457,25 @@ function makeDraggable(box){
     let nx = Math.min(Math.max(e.clientX - drag.dx, 0), b.w - s);
     let ny = Math.min(Math.max(e.clientY - drag.dy, tG), b.h - s);
 
-    const t = performance.now();
+    const t = performance.now() * 0.001; // секунды
+nvx += Math.sin(t * 0.35 + box.wanderSeed) * 0.06;
+nvy += Math.cos(t * 0.31 + box.wanderSeed) * 0.06;
+
+// --- отталкивание от стен, чтобы не «залипали» в углах ---
+const margin = 80;
+if (nx < margin)         nvx += (1 - nx / margin) * 0.45;
+if (ny < tG + margin)    nvy += (1 - (ny - tG) / margin) * 0.45;
+if (nx > b.w - s - margin) nvx -= (1 - (b.w - s - nx) / margin) * 0.45;
+if (ny > b.h - s - margin) nvy -= (1 - (b.h - s - ny) / margin) * 0.45;
+
+// --- ограничение максимальной скорости (чтобы не улетали слишком быстро) ---
+const sp2 = nvx*nvx + nvy*nvy;
+const maxSp = box.maxSpeed;
+if (sp2 > maxSp*maxSp){
+  const k = maxSp / Math.sqrt(sp2);
+  nvx *= k; nvy *= k;
+}
+
     const dt = Math.max(8, t - drag.lastT);
     drag.vx = (e.clientX - drag.lastX) / dt;
     drag.vy = (e.clientY - drag.lastY) / dt;
@@ -412,8 +494,7 @@ function makeDraggable(box){
     el.releasePointerCapture?.(drag.id);
     el.classList.remove('dragging');
 
-    // инерция
-    const scale = 18;
+    const scale = 18; // инерция
     box.vel.vx = drag.vx * scale;
     box.vel.vy = drag.vy * scale;
     box.dragging = false;
