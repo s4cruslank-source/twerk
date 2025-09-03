@@ -947,3 +947,96 @@ html, body {
   .modal--howto .modal__panel{ width:min(96vw, 560px); }
   .modal--howto .modal__body{ font-size: 15.8px; }
 }
+/* === ULTRA SCALE (2K/4K) === */
+:root{
+  --ui-scale: 1;        /* базовый масштаб интерфейса */
+  --floater-boost: 1;   /* множитель для эмодзи */
+}
+
+/* 2K (≈1440p) — слегка увеличить всё */
+@media (min-width: 1920px){
+  :root{
+    --ui-scale: 1.15;
+    --floater-boost: 1.1;
+    --marquee-h: 32px;
+  }
+  html{ font-size: clamp(16px, 0.8vw, 20px); } /* базовый текст чуть крупнее */
+}
+
+/* 2.5K–3K (например, 2560×1440, 2880×1620) — ещё больше */
+@media (min-width: 2560px){
+  :root{
+    --ui-scale: 1.35;
+    --floater-boost: 1.18;
+    --marquee-h: 36px;
+  }
+  html{ font-size: clamp(18px, 0.75vw, 22px); }
+}
+
+/* 4K (3840×2160 и выше) — заметно крупнее */
+@media (min-width: 3840px){
+  :root{
+    --ui-scale: 1.6;
+    --floater-boost: 1.3;
+    --marquee-h: 40px;
+  }
+  html{ font-size: clamp(20px, 0.7vw, 24px); }
+  .gate__skip{
+  font-size: 40px;
+}
+.howto__item p{
+  font-size: 30px;
+}
+.pills{
+  font-size: 30px;
+}
+.modal--howto .howto__step {
+  font-size: 30px;
+}
+.modal--howto ol li::marker{
+font-size: 38px;
+}
+.cta-btn.copy{
+  font-size: 18px;
+}
+}
+
+/* масштабируем ключевые элементы под --ui-scale */
+.topbar{ padding: calc(16px * var(--ui-scale)) calc(24px * var(--ui-scale)); gap: calc(16px * var(--ui-scale)); }
+.logo-img{ height: clamp(72px, calc(12vw * var(--ui-scale)), 200px) !important; }
+
+.ca-copy input{
+  min-height: calc(50px * var(--ui-scale));
+  padding: calc(12px * var(--ui-scale)) calc(14px * var(--ui-scale));
+  font-size: calc(15px * var(--ui-scale));
+  border-radius: calc(12px * var(--ui-scale));
+}
+
+.cta-btn,
+.btn{
+  min-height: calc(50px * var(--ui-scale));
+  padding: calc(12px * var(--ui-scale)) calc(16px * var(--ui-scale));
+  font-size: calc(14px * var(--ui-scale));
+  border-radius: calc(12px * var(--ui-scale));
+}
+
+.wild-btn{
+  min-height: calc(52px * var(--ui-scale));
+  font-size: calc(15px * var(--ui-scale));
+  border-radius: calc(14px * var(--ui-scale));
+}
+
+.link-ico{
+  width: calc(55px * var(--ui-scale));
+  height: calc(55px * var(--ui-scale));
+  border-radius: calc(12px * var(--ui-scale));
+}
+.link-ico img{ width: calc(28px * var(--ui-scale)); }
+
+/* модалка — шрифты/отступы больше */
+.modal__panel{ border-radius: calc(16px * var(--ui-scale)); }
+.modal__header, .modal__footer{ padding: calc(16px * var(--ui-scale)) calc(18px * var(--ui-scale)); }
+.modal__body{ padding: calc(16px * var(--ui-scale)) calc(18px * var(--ui-scale)); font-size: calc(15.5px * var(--ui-scale)); }
+.modal__title{ font-size: clamp(20px, calc(2.4vw * var(--ui-scale)), 40px); }
+
+
